@@ -1,0 +1,15 @@
+coco experiments
+logging file
+correct the class_id
+correct class_id of files copied from vast-115
+2 gpu computer
+gaussian process with active learning and sampling
+gaussian process with different output functions
+gp + composition
+saving with different parameters? e.g. gaussian process functions
+make single script to copy everything to new computer
+fix class_id in extremal_perturbation variantes
+add install github to vast-utils
+push todo to github
+simple scale and crop on vgg16 and resnet50
+unweighted scale and crop on vgg16 and resnet50

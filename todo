@@ -1,0 +1,63 @@
+#!/opt/conda/envs/gpnnenv/bin/python
+import sys
+import os
+mydir = os.path.dirname(os.path.realpath(__file__))
+print(mydir);
+#assert False
+TODO_FILE = os.path.join(mydir,"todo.txt")
+
+def append_task(task):
+    with open(TODO_FILE, 'a') as file:
+        file.write(task + '\n')
+    print(f'Added task: {task}')
+
+def list_tasks():
+    if not os.path.exists(TODO_FILE):
+        print("No tasks added yet.")
+        return
+
+    with open(TODO_FILE, 'r') as file:
+        lines = file.readlines()
+        for idx, line in enumerate(lines, 1):
+            print(f'{idx}. {line.strip()}')
+
+def mark_done(task_number):
+    if not os.path.exists(TODO_FILE):
+        print("No tasks added yet.")
+        return
+
+    with open(TODO_FILE, 'r') as file:
+        lines = file.readlines()
+
+    if task_number < 1 or task_number > len(lines):
+        print("Invalid task number.")
+        return
+
+    task = lines.pop(task_number - 1)
+
+    with open(TODO_FILE, 'w') as file:
+        file.writelines(lines)
+
+    print(f'Marked done: {task.strip()}')
+
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("Please provide a command. (e.g., `todo <task>`, `todo --list`, or `todo --done <number>`)")
+        sys.exit(1)
+
+    command = sys.argv[1]
+
+    if command == '--list':
+        list_tasks()
+    elif command == '--done':
+        if len(sys.argv) < 3:
+            print("Please provide the task number to mark as done.")
+            sys.exit(1)
+        try:
+            task_number = int(sys.argv[2])
+            mark_done(task_number)
+        except ValueError:
+            print("Invalid task number.")
+    else:
+        append_task(command)
+
