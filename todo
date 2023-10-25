@@ -1,17 +1,33 @@
 #!/opt/conda/envs/gpnnenv/bin/python
 import sys
 import os
+import subprocess
+import glob
 mydir = os.path.dirname(os.path.realpath(__file__))
 print(mydir);
 #assert False
-TODO_FILE = os.path.join(mydir,"todo.txt")
+# TODO_FILE = os.path.join(mydir,"todo.txt")
+DEFAULT_TODO_FILE = os.path.join(mydir, "todo.txt")
 
-def append_task(task):
+def get_todo_file(group=None):
+    """Returns the file name based on the group."""
+    if group:
+        return os.path.join(mydir, f"todo_{group}.txt")
+    else:
+        return DEFAULT_TODO_FILE
+
+def append_task(task, group=None):
+    TODO_FILE = get_todo_file(group)
     with open(TODO_FILE, 'a') as file:
         file.write(task + '\n')
     print(f'Added task: {task}')
 
-def list_tasks():
+def list_groups():
+    todofiles = glob.glob(os.path.join(mydir, f"todo_*.txt"))
+    print('\n'.join(todofiles))
+
+def list_tasks(group=None):
+    TODO_FILE = get_todo_file(group)
     if not os.path.exists(TODO_FILE):
         print("No tasks added yet.")
         return
@@ -21,7 +37,8 @@ def list_tasks():
         for idx, line in enumerate(lines, 1):
             print(f'{idx}. {line.strip()}')
 
-def mark_done(task_number):
+def mark_done(task_number,group=None):
+    TODO_FILE = get_todo_file(group)
     if not os.path.exists(TODO_FILE):
         print("No tasks added yet.")
         return
@@ -40,24 +57,76 @@ def mark_done(task_number):
 
     print(f'Marked done: {task.strip()}')
 
+def modify_task(task_number,group=None):
+    TODO_FILE = get_todo_file(group)
+    if not os.path.exists(TODO_FILE):
+        print("No tasks added yet.")
+        return
+
+    with open(TODO_FILE, 'r') as file:
+        lines = file.readlines()
+
+    if task_number < 1 or task_number > len(lines):
+        print("Invalid task number.")
+        return
+
+    task = lines[task_number - 1].strip()
+
+    # Use vim editor to modify the task
+    with open('temp_todo.txt', 'w') as temp_file:
+        temp_file.write(task)
+
+    subprocess.call(['vim', 'temp_todo.txt'])
+
+    with open('temp_todo.txt', 'r') as temp_file:
+        modified_task = temp_file.read().strip()
+
+    lines[task_number - 1] = modified_task + '\n'
+
+    with open(TODO_FILE, 'w') as file:
+        file.writelines(lines)
+
+    os.remove('temp_todo.txt')
+    print(f'Modified task {task_number}: {modified_task}')
+
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Please provide a command. (e.g., `todo <task>`, `todo --list`, or `todo --done <number>`)")
         sys.exit(1)
 
+    group = None
+    if '--group' in sys.argv:
+        group_idx = sys.argv.index('--group')
+        if len(sys.argv) > group_idx + 1:
+            group = sys.argv[group_idx + 1]
+            sys.argv.pop(group_idx + 1)
+        
+        sys.argv.pop(group_idx)
+
     command = sys.argv[1]
 
     if command == '--list':
-        list_tasks()
+        list_tasks(group=group)
+    elif command == '--list-groups':
+        list_groups()
     elif command == '--done':
         if len(sys.argv) < 3:
             print("Please provide the task number to mark as done.")
             sys.exit(1)
         try:
             task_number = int(sys.argv[2])
-            mark_done(task_number)
+            mark_done(task_number,group=group)
+        except ValueError:
+            print("Invalid task number.")
+    elif command == '--modify':
+        if len(sys.argv) < 3:
+            print("Please provide the task number to modify.")
+            sys.exit(1)
+        try:
+            task_number = int(sys.argv[2])
+            modify_task(task_number,group=group)
         except ValueError:
             print("Invalid task number.")
     else:
-        append_task(command)
+        append_task(command,group=group)
 
